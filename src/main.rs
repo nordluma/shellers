@@ -1,5 +1,7 @@
 use std::{
+    env,
     io::{self, stdin, stdout, Write},
+    path::Path,
     process::Command,
 };
 
@@ -15,8 +17,20 @@ fn main() -> io::Result<()> {
         let command = parts.next().unwrap();
         let args = parts;
 
-        let mut child = Command::new(command).args(args).spawn().unwrap();
+        match command {
+            "cd" => {
+                let new_dir = args.peekable().peek().map_or("/", |d| *d);
+                let root = Path::new(new_dir);
 
-        child.wait()?;
+                if let Err(e) = env::set_current_dir(&root) {
+                    eprintln!("{}", e);
+                }
+            }
+            command => {
+                let mut child = Command::new(command).args(args).spawn().unwrap();
+
+                child.wait()?;
+            }
+        }
     }
 }
